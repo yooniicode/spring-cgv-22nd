@@ -5,6 +5,7 @@ import com.ceos22.spring_boot.common.response.ApiResponse;
 import com.ceos22.spring_boot.domain.order.dto.PurchaseRequestDto;
 import com.ceos22.spring_boot.domain.order.dto.PurchaseResponseDto;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import com.ceos22.spring_boot.common.response.status.SuccessStatus;
 
 @RestController
 @RequestMapping("/store")
+@Tag(name = "Order API", description = "상품 주문 관련 API")
 public class OrderController {
 
     private final OrderService orderService;

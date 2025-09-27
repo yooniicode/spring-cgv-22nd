@@ -38,4 +38,13 @@ public class Reservation extends BaseEntity {
         this.status = status;
     }
 
+    public void pay() {
+        this.status = PaymentStatus.SUCCESS;
+    }
+
+    public void cancel() {
+        if (this.status == PaymentStatus.CANCELLED) return;
+        this.status = PaymentStatus.CANCELLED;
+    }
+
 }

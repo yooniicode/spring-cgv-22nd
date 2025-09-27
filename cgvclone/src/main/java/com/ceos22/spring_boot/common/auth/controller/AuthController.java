@@ -13,7 +13,7 @@ import org.springframework.security.authentication.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-@Tag(name = "Auth", description = "인증 관련 API")
+@Tag(name = "Auth API", description = "인증 관련 API")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
