@@ -17,11 +17,11 @@ public class OrderDetail extends BaseEntity {
     private Long odId;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false) // FK 명시
+    @JoinColumn(name = "order_id", nullable = false)
     private UserOrder userOrder;
 
     @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false) // FK 명시
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     private Integer quantity;

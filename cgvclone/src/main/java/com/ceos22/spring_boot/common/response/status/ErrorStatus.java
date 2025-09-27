@@ -22,6 +22,13 @@ public enum ErrorStatus {
     INVALID_CREDENTIALS(HttpStatus.BAD_REQUEST, "AUTH401", "아이디 또는 비밀번호가 올바르지 않습니다."),
     DUPLICATE_USERNAME(HttpStatus.CONFLICT, "AUTH402", "이미 존재하는 사용자명입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "AUTH403", "이미 존재하는 이메일입니다."),
+
+    OUT_OF_STOCK(HttpStatus.FORBIDDEN, "STORE400", "재고가 부족합니다."),
+    PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "STORE401", "상품이 존재하지 않습니다."),
+    PRODUCT_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "STORE402", "판매 중지된 상품입니다."),
+
+
+
     ;
 
     private final HttpStatus httpStatus;

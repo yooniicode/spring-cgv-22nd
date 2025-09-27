@@ -28,7 +28,13 @@ public class UserOrder extends BaseEntity {
     private Integer totalPrice;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private PaymentStatus status;
+
+    public void markReserved(int totalPrice) { // 결제 완료 = SUCCESS
+        this.totalPrice = totalPrice;
+        this.status = PaymentStatus.SUCCESS;
+    }
 
 }
 

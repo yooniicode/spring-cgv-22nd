@@ -30,9 +30,11 @@ public class Payment extends BaseEntity {
     private UserOrder userOrder;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private PaymentMethod method;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
     private PaymentStatus status;
 
     // todo: 결제는 반드시 reservation_id 또는 order_id 중 하나만 채워져야 함 - 검증로직 !!

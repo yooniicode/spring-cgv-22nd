@@ -29,10 +29,10 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
             status = ErrorStatus._UNAUTHORIZED;
         }
 
-        ApiResponse<?> body = ApiResponse.ofFailure(status, message);
+        var responseEntity = ApiResponse.onFailure(status);
 
         res.setStatus(status.getHttpStatus().value());
         res.setContentType("application/json;charset=UTF-8");
-        res.getWriter().write(om.writeValueAsString(body));
+        om.writeValue(res.getWriter(), responseEntity.getBody());
     }
 }

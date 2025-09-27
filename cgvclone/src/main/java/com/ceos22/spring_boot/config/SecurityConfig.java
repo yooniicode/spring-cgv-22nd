@@ -4,6 +4,7 @@ import com.ceos22.spring_boot.common.auth.security.jwt.JwtAuthEntryPoint;
 import com.ceos22.spring_boot.common.auth.security.jwt.JwtAuthenticationFilter;
 import com.ceos22.spring_boot.common.auth.properties.JwtProperties;
 import com.ceos22.spring_boot.common.auth.security.jwt.JwtTokenProvider;
+import com.ceos22.spring_boot.domain.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -24,7 +25,10 @@ public class SecurityConfig {
         return cfg.getAuthenticationManager();
     }
 
-    @Bean public JwtTokenProvider jwtTokenProvider(JwtProperties props) { return new JwtTokenProvider(props); }
+    @Bean
+    public JwtTokenProvider jwtTokenProvider(JwtProperties props, UserRepository users) {
+        return new JwtTokenProvider(props, users);
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter, JwtAuthEntryPoint entryPoint) throws Exception {

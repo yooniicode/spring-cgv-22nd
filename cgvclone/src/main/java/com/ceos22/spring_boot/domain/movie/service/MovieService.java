@@ -1,5 +1,7 @@
-package com.ceos22.spring_boot.domain.movie;
+package com.ceos22.spring_boot.domain.movie.service;
 
+import com.ceos22.spring_boot.domain.movie.MovieDto;
+import com.ceos22.spring_boot.domain.movie.MovieRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
