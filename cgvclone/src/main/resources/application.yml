@@ -36,3 +36,8 @@ security:
       iterations: 120000
       key-length: 256
       salt-bytes: 16
+
+payment:
+  base-url: https://payment.loopz.co.kr
+  api-secret: ${PAYMENT_API_SECRET}
+  store-id: ${PAYMENT_STORE_ID}

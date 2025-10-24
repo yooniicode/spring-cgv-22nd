@@ -2,6 +2,8 @@ package com.ceos22.spring_boot.domain.reservation;
 
 import com.ceos22.spring_boot.common.enums.PaymentStatus;
 import com.ceos22.spring_boot.common.exception.GeneralException;
+import com.ceos22.spring_boot.common.payment.PaymentProperties;
+import com.ceos22.spring_boot.common.payment.PaymentService;
 import com.ceos22.spring_boot.common.response.status.ErrorStatus;
 import com.ceos22.spring_boot.domain.reservation.entity.Reservation;
 import com.ceos22.spring_boot.domain.reservation.entity.ReservationSeat;
@@ -30,6 +32,8 @@ public class ReservationService {
     private final ScreeningRepository screeningRepository;
     private final ScreeningSeatRepository screeningSeatRepository;
     private final UserRepository userRepository;
+    private final PaymentService paymentService;
+    private final PaymentProperties paymentProperties;
 
     @Transactional
     public ReservationDto.ReservationResponse createReservation(Long userId, ReservationDto.ReservationRequest request) {
@@ -125,31 +129,54 @@ public class ReservationService {
     }
 
     @Transactional
-    public void confirmReservationPayment(Long reservationId, int paidAmount) {
+    public PaymentService.PaymentResponse processPayment(Long reservationId, Long userId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus._NOT_FOUND, "예매 내역을 찾을 수 없습니다."));
 
-        if (reservation.isExpired()) {
-            throw new GeneralException(ErrorStatus._BAD_REQUEST, "예매가 만료되었습니다.");
+        if (!reservation.getUser().getUserId().equals(userId)) {
+            throw new GeneralException(ErrorStatus._FORBIDDEN, "본인의 예매만 결제할 수 있습니다.");
         }
 
-        if (reservation.getStatus() != PaymentStatus.PENDING) {
-            throw new GeneralException(ErrorStatus._BAD_REQUEST, "이미 결제된 예약입니다.");
-        }
+        String paymentId = "R-" + reservationId + "-" + System.currentTimeMillis();
 
-        // 금액 검증
-        if (!reservation.getTotalAmount().equals(paidAmount)) {
-            throw new GeneralException(ErrorStatus._BAD_REQUEST, "결제 금액이 일치하지 않습니다.");
-        }
+        PaymentService.PaymentRequest request = new PaymentService.PaymentRequest(
+                paymentProperties.getStoreId(),
+                reservation.getScreening().getMovie().getTitle(),
+                reservation.getTotalAmount(),
+                "KRW",
+                "{\"type\":\"RESERVATION\",\"id\":" + reservationId + "}"
+        );
 
-        if (reservationSeatRepository.findByReservation(reservation).isEmpty()) {
-            throw new GeneralException(ErrorStatus._BAD_REQUEST, "좌석 정보가 유효하지 않습니다. 만료된 예약일 수 있습니다.");
-        }
+        PaymentService.PaymentResponse response = paymentService.requestPayment(paymentId, request);
 
-        reservation.pay(); // status = SUCCESS
-        reservation.setExpiresAt(null); // 만료시간 무효화
+        reservation.pay();
+        reservation.setPaymentId(response.paymentId());
+        reservationRepository.save(reservation);
+
+        return response;
     }
 
+
+    @Transactional
+    public void confirmReservationPayment(Long reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus._NOT_FOUND, "예매를 찾을 수 없습니다."));
+
+        String paymentId = "R-" + reservationId + "-" + System.currentTimeMillis();
+
+        PaymentService.PaymentRequest request = new PaymentService.PaymentRequest(
+                paymentProperties.getStoreId(),
+                reservation.getScreening().getMovie().getTitle(),
+                reservation.getTotalAmount(),
+                "KRW",
+                "{\"type\":\"RESERVATION\",\"id\":" + reservationId + "}"
+        );
+
+        PaymentService.PaymentResponse response = paymentService.requestPayment(paymentId, request);
+
+        reservation.pay();
+        reservation.setPaymentId(response.paymentId());
+    }
 
     private ReservationDto.ReservationResponse toResponse(Reservation reservation, List<ScreeningSeat> seats) {
         return ReservationDto.ReservationResponse.builder()

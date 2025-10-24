@@ -16,6 +16,8 @@ public enum ErrorStatus {
     _FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON403", "금지된 요청입니다."),
     _NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON404", "페이지를 찾을 수 없습니다."),
 
+    _EXTERNAL_API_ERROR(HttpStatus.BAD_GATEWAY, "COMMON500", "외부 결제 서버 통신 중 오류가 발생했습니다."),
+
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "VALID400", "입력값이 올바르지 않습니다."),
 
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "AUTH400", "존재하지 않는 사용자입니다."),

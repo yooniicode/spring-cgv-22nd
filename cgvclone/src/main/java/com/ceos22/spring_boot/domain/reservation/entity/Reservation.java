@@ -39,6 +39,13 @@ public class Reservation extends BaseEntity {
     @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
+    @Column(name = "payment_id")
+    private String paymentId;
+
+    public void setPaymentId(String paymentId) {
+        this.paymentId = paymentId;
+    }
+
     public boolean isExpired() {
         return expiresAt != null && expiresAt.isBefore(LocalDateTime.now());
     }
