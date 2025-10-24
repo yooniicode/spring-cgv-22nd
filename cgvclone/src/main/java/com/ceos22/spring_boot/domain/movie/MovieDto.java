@@ -34,7 +34,7 @@ public class MovieDto {
                 .runningTime(movie.getRunningTime())
                 .releaseDate(movie.getReleaseDate())
                 .rating(movie.getRating())
-                .isActive(movie.isActive())
+                .isActive(movie.getIsActive())
                 .directors(movie.getDirectors())
                 .actors(movie.getActors())
                 .genres(movie.getCategorizings().stream()

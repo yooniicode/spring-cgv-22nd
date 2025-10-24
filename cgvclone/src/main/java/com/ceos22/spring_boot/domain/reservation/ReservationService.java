@@ -13,7 +13,7 @@ import com.ceos22.spring_boot.domain.theater.repository.ScreeningRepository;
 import com.ceos22.spring_boot.domain.theater.repository.ScreeningSeatRepository;
 import com.ceos22.spring_boot.domain.user.User;
 import com.ceos22.spring_boot.domain.user.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -123,6 +123,33 @@ public class ReservationService {
 
         reservation.cancel();
     }
+
+    @Transactional
+    public void confirmReservationPayment(Long reservationId, int paidAmount) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus._NOT_FOUND, "예매 내역을 찾을 수 없습니다."));
+
+        if (reservation.isExpired()) {
+            throw new GeneralException(ErrorStatus._BAD_REQUEST, "예매가 만료되었습니다.");
+        }
+
+        if (reservation.getStatus() != PaymentStatus.PENDING) {
+            throw new GeneralException(ErrorStatus._BAD_REQUEST, "이미 결제된 예약입니다.");
+        }
+
+        // 금액 검증
+        if (!reservation.getTotalAmount().equals(paidAmount)) {
+            throw new GeneralException(ErrorStatus._BAD_REQUEST, "결제 금액이 일치하지 않습니다.");
+        }
+
+        if (reservationSeatRepository.findByReservation(reservation).isEmpty()) {
+            throw new GeneralException(ErrorStatus._BAD_REQUEST, "좌석 정보가 유효하지 않습니다. 만료된 예약일 수 있습니다.");
+        }
+
+        reservation.pay(); // status = SUCCESS
+        reservation.setExpiresAt(null); // 만료시간 무효화
+    }
+
 
     private ReservationDto.ReservationResponse toResponse(Reservation reservation, List<ScreeningSeat> seats) {
         return ReservationDto.ReservationResponse.builder()
