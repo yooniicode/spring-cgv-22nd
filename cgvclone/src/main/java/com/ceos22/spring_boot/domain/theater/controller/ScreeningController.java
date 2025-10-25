@@ -3,7 +3,7 @@ package com.ceos22.spring_boot.domain.theater.controller;
 import com.ceos22.spring_boot.common.response.ApiResponse;
 import com.ceos22.spring_boot.common.response.status.ErrorStatus;
 import com.ceos22.spring_boot.common.response.status.SuccessStatus;
-import com.ceos22.spring_boot.domain.movie.MovieRepository;
+import com.ceos22.spring_boot.domain.movie.repository.MovieRepository;
 import com.ceos22.spring_boot.domain.movie.entity.Movie;
 import com.ceos22.spring_boot.domain.theater.dto.ScreeningRequestDto;
 import com.ceos22.spring_boot.domain.theater.dto.ScreeningResponseDto;

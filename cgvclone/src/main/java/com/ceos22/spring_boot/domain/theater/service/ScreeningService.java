@@ -2,7 +2,7 @@ package com.ceos22.spring_boot.domain.theater.service;
 
 import com.ceos22.spring_boot.common.exception.GeneralException;
 import com.ceos22.spring_boot.common.response.status.ErrorStatus;
-import com.ceos22.spring_boot.domain.movie.MovieRepository;
+import com.ceos22.spring_boot.domain.movie.repository.MovieRepository;
 import com.ceos22.spring_boot.domain.movie.entity.Movie;
 import com.ceos22.spring_boot.domain.theater.dto.ScreeningRequestDto;
 import com.ceos22.spring_boot.domain.theater.entity.Screen;

@@ -34,7 +34,6 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 	// runtimeOnly 'com.h2database:h2'
 
-    // 버전 명시 안하면 안되는 이유는 멀까.. .. ㅜㅜ
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
     runtimeOnly  'io.jsonwebtoken:jjwt-impl:0.11.5'
     runtimeOnly  'io.jsonwebtoken:jjwt-jackson:0.11.5'
