@@ -11,12 +11,14 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 public class JwtTokenProvider {
 
     private static final String AUTH_CLAIM = "auth";
@@ -37,8 +39,17 @@ public class JwtTokenProvider {
                 .map(a -> a.getAuthority())
                 .collect(Collectors.joining(","));
 
+        Object principal = authentication.getPrincipal();
+
+        String subject;
+        if (principal instanceof CustomUserPrincipal customPrincipal) {
+            subject = customPrincipal.getPublicId().toString();
+        } else {
+            subject = authentication.getName();
+        }
+
         return Jwts.builder()
-                .setSubject(authentication.getName())
+                .setSubject(subject)
                 .claim(AUTH_CLAIM, authorities)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
@@ -48,7 +59,7 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
-        String username = claims.getSubject();
+        UUID publicId = UUID.fromString(claims.getSubject());
         String authStr = claims.get(AUTH_CLAIM, String.class);
         var authorities = Optional.ofNullable(authStr)
                 .stream()
@@ -56,8 +67,9 @@ public class JwtTokenProvider {
                 .filter(s -> !s.isBlank())
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
-        User u = users.findByUsername(username)
-                .orElseThrow(() -> new GeneralException(ErrorStatus._BAD_REQUEST, "사용자를 찾을 수 없습니다: " + username));
+        User u = users.findByPublicId(publicId)
+                .orElseThrow(() -> new GeneralException(ErrorStatus._BAD_REQUEST, "사용자를 찾을 수 없습니다: " + publicId));
+
 
         var principal = new CustomUserPrincipal(
                 u.getUserId(),
@@ -77,14 +89,23 @@ public class JwtTokenProvider {
             parseClaims(token);
             return true;
         } catch (ExpiredJwtException e) {
-            return false;
+            log.info("JWT expired at {}", e.getClaims().getExpiration());
+            throw new GeneralException(ErrorStatus.TOKEN_EXPIRED, "토큰이 만료되었습니다.");
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            throw new GeneralException(ErrorStatus.INVALID_TOKEN, "유효하지 않은 토큰입니다.");
         }
     }
+
 
     private Claims parseClaims(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build()
                 .parseClaimsJws(token).getBody();
     }
+
+    public long getExpiration(String token) {
+        Claims claims = parseClaims(token);
+        Date expiration = claims.getExpiration();
+        return (expiration.getTime() - System.currentTimeMillis()) / 1000L;
+    }
+
 }

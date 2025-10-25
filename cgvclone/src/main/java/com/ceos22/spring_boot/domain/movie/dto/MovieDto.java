@@ -1,4 +1,4 @@
-package com.ceos22.spring_boot.domain.movie;
+package com.ceos22.spring_boot.domain.movie.dto;
 
 import com.ceos22.spring_boot.common.enums.Rating;
 import com.ceos22.spring_boot.domain.movie.entity.Movie;

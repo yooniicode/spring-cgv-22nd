@@ -6,6 +6,7 @@ import com.ceos22.spring_boot.common.response.status.ErrorStatus;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -13,17 +14,18 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper objectMapper;
 
     @Override
-    public void commence(HttpServletRequest req,
-                         HttpServletResponse res,
-                         AuthenticationException ex) throws IOException {
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
+                         AuthenticationException exception) throws IOException {
         ErrorStatus status;
-        String message = ex.getMessage();
+        String message = exception.getMessage();
 
-        if (ex instanceof AuthFailureException afe) {
+        if (exception instanceof AuthFailureException afe) {
             status = afe.getErrorStatus();
         } else {
             status = ErrorStatus._UNAUTHORIZED;
@@ -31,8 +33,8 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
 
         var responseEntity = ApiResponse.onFailure(status);
 
-        res.setStatus(status.getHttpStatus().value());
-        res.setContentType("application/json;charset=UTF-8");
-        om.writeValue(res.getWriter(), responseEntity.getBody());
+        response.setStatus(status.getHttpStatus().value());
+        response.setContentType("application/json;charset=UTF-8");
+        objectMapper.writeValue(response.getWriter(), responseEntity.getBody());
     }
 }

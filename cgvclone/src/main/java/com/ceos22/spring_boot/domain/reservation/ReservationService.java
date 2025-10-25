@@ -63,12 +63,12 @@ public class ReservationService {
         }
 
         // 이미 예약된 좌석인지 검증
-        for (ScreeningSeat seat : seats) {
-            if (reservationSeatRepository.existsByScreeningSeat(seat)) {
-                throw new GeneralException(ErrorStatus._BAD_REQUEST,
-                        "이미 예약된 좌석이 포함되어 있습니다: " + seat.getSeat().getSeatName());
-            }
+        List<Long> reservedSeatIds = reservationSeatRepository.findReservedSeatIds(seats);
+        if (!reservedSeatIds.isEmpty()) {
+            throw new GeneralException(ErrorStatus.SEAT_ALREADY_RESERVED,
+                    "이미 예약된 좌석이 포함되어 있습니다: " + reservedSeatIds);
         }
+
 
         int totalAmount = seats.stream().mapToInt(ScreeningSeat::getPrice).sum();
 
