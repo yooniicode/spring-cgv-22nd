@@ -20,15 +20,21 @@ public class FavoriteMovieService {
 
     @Transactional
     public void add(Long userId, Long movieId) {
-        if (favorites.existsByUser_UserIdAndMovie_MovieId(userId, movieId)) return;
+
         var user = users.findById(userId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.USER_NOT_FOUND));
         var movie = movies.findById(movieId)
                 .orElseThrow(() -> new GeneralException(ErrorStatus.MOVIE_NOT_FOUND));
 
-        favorites.save(FavoriteMovie.builder().user(user).movie(movie).build());
-    }
+        if (favorites.existsByUser_UserIdAndMovie_MovieId(userId, movieId)) {
+            throw new GeneralException(ErrorStatus.ALREADY_FAVORITED, "이미 즐겨찾기된 영화입니다.");
+        }
 
+        favorites.save(FavoriteMovie.builder()
+                .user(user)
+                .movie(movie)
+                .build());
+    }
     @Transactional
     public void remove(Long userId, Long movieId) {
         var fav = favorites.findByUser_UserIdAndMovie_MovieId(userId, movieId)

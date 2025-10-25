@@ -28,7 +28,7 @@ public class JwtTokenProvider {
 
     public JwtTokenProvider(JwtProperties props, UserRepository users) {
         this.key = Keys.hmacShaKeyFor(props.secret().getBytes(StandardCharsets.UTF_8));
-        this.validityMillis = props.accessTokenValidityInSeconds() * 1000L;
+        this.validityMillis = props.accessTokenValidity().toMillis();
         this.users = users;
     }
 
@@ -59,7 +59,15 @@ public class JwtTokenProvider {
 
     public Authentication getAuthentication(String token) {
         Claims claims = parseClaims(token);
-        UUID publicId = UUID.fromString(claims.getSubject());
+
+        String subject = claims.getSubject();
+        UUID publicId;
+        try {
+            publicId = UUID.fromString(subject);
+        } catch (IllegalArgumentException e) {
+            throw new GeneralException(ErrorStatus.INVALID_TOKEN, "잘못된 토큰 형식입니다: " + subject);
+        }
+
         String authStr = claims.get(AUTH_CLAIM, String.class);
         var authorities = Optional.ofNullable(authStr)
                 .stream()

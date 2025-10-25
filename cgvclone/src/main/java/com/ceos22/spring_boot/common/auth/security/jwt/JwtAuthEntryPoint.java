@@ -10,9 +10,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
-
+import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
@@ -23,7 +24,8 @@ public class JwtAuthEntryPoint implements AuthenticationEntryPoint {
                          HttpServletResponse response,
                          AuthenticationException exception) throws IOException {
         ErrorStatus status;
-        String message = exception.getMessage();
+
+        log.warn("Unauthorized access: {}", exception.getMessage());
 
         if (exception instanceof AuthFailureException afe) {
             status = afe.getErrorStatus();

@@ -27,16 +27,6 @@ public class OrderDetail extends BaseEntity {
     private Integer price;
     private Integer unitPrice;
 
-    @Builder
-    public OrderDetail(UserOrder userOrder, Product product, int quantity, int unitPrice, int subtotal) {
-        this.userOrder = userOrder;
-        this.product = product;
-        this.quantity = quantity;
-        this.unitPrice = unitPrice;
-        this.subtotal = subtotal;
-    }
-
-
     // subtotal = quantity * price
     private Integer subtotal;
 }
