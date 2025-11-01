@@ -83,13 +83,14 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
+            set -x
             echo "Starting deploy on EC2..."
 
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             # MySQL 컨테이너
-            if ! sudo docker ps --format '{{.Names}}' | grep -q '^mysql$'; then
-              if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$'; then
+            if ! sudo docker ps --format '{{.Names}}' | grep -q '^mysql$' || true; then
+              if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$' || true; then
                 echo "Starting mysql container..."
                 sudo docker run -d --name mysql \
                   -e MYSQL_ROOT_PASSWORD=rootpw \
