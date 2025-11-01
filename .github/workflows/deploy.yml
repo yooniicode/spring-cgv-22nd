@@ -5,6 +5,10 @@ on:
     branches: [ "master" ]
   workflow_dispatch: {}
 
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: true
+
 jobs:
   build_and_push:
     if: github.ref == 'refs/heads/master'
@@ -13,6 +17,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Grant execute permission for gradlew
+        working-directory: ./cgvclone
+        run: chmod +x ./gradlew
+
+      - name: Build JAR
+        working-directory: ./cgvclone
+        run: ./gradlew clean build -x test
 
       # 이미지 메타(태그/라벨) 생성
       - name: Docker meta
