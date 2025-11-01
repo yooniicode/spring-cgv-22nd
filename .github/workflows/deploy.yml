@@ -89,24 +89,24 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
             # MySQL 컨테이너
-            if ! sudo docker ps --format '{{.Names}}' | grep -q '^mysql$' || true; then
-              if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$' || true; then
-                echo "Starting mysql container..."
-                sudo docker run -d --name mysql \
-                  -e MYSQL_ROOT_PASSWORD=rootpw \
-                  -e MYSQL_DATABASE=ceosdb \
-                  -e MYSQL_USER=ceosuser \
-                  -e MYSQL_PASSWORD=ceospw \
-                  -p 3306:3306 \
-                  mysql:8
-                sleep 15
+            if sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$'; then
+              if sudo docker ps --format '{{.Names}}' | grep -q '^mysql$'; then
+                echo "MySQL already running. Restarting..."
+                sudo docker restart mysql
               else
-                echo "Starting existing mysql container..."
+                echo "MySQL container exists but stopped. Starting..."
                 sudo docker start mysql
-                sleep 5
               fi
             else
-              echo "mysql is already running."
+              echo "MySQL container not found. Creating new one..."
+              sudo docker run -d --name mysql \
+                -e MYSQL_ROOT_PASSWORD=rootpw \
+                -e MYSQL_DATABASE=ceosdb \
+                -e MYSQL_USER=ceosuser \
+                -e MYSQL_PASSWORD=ceospw \
+                -p 3306:3306 \
+                mysql:8
+              sleep 15
             fi
 
             # 앱 이미지 풀 & 재기동
