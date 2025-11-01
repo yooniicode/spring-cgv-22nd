@@ -40,7 +40,6 @@ jobs:
         working-directory: ./cgvclone
         run: ./gradlew clean build -x test
 
-      # 이미지 메타(태그/라벨) 생성
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -62,8 +61,8 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v6
         with:
-          context: ./cgvclone                
-          file: ./cgvclone/Dockerfile  
+          context: ./cgvclone
+          file: ./cgvclone/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -83,15 +82,48 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
+            set -euo pipefail
             echo "Starting deploy on EC2..."
-            docker pull ${{ secrets.IMAGE_NAME }}:latest
-            docker stop web || true
-            docker rm web || true
-            docker run -d --name web \
+
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # MySQL 컨테이너
+            if ! sudo docker ps --format '{{.Names}}' | grep -q '^mysql$'; then
+              if ! sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$'; then
+                echo "Starting mysql container..."
+                sudo docker run -d --name mysql \
+                  -e MYSQL_ROOT_PASSWORD=rootpw \
+                  -e MYSQL_DATABASE=ceosdb \
+                  -e MYSQL_USER=ceosuser \
+                  -e MYSQL_PASSWORD=ceospw \
+                  -p 3306:3306 \
+                  mysql:8
+                sleep 15
+              else
+                echo "Starting existing mysql container..."
+                sudo docker start mysql
+                sleep 5
+              fi
+            else
+              echo "mysql is already running."
+            fi
+
+            # 앱 이미지 풀 & 재기동
+            IMAGE="${{ secrets.IMAGE_NAME }}:latest"
+            sudo docker pull "$IMAGE" || true
+            sudo docker stop web || true
+            sudo docker rm web || true
+
+            sudo docker run -d --name web \
               --link mysql:mysql \
               -p 80:8080 \
-              -e DB_URL="jdbc:mysql://mysql:3306/ceosdb?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8" \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              -e DB_URL="jdbc:mysql://mysql:3306/ceosdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8" \
               -e DB_USERNAME="ceosuser" \
               -e DB_PASSWORD="ceospw" \
-              ${{ secrets.IMAGE_NAME }}:latest
-            echo "Deploy complete."
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e JWT_EXPIRATION_MS="${{ secrets.JWT_EXPIRATION_MS }}" \
+              -e JWT_REFRESH_EXPIRATION_MS="${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" \
+              "$IMAGE"
+
+            echo "Deploy complete!"
