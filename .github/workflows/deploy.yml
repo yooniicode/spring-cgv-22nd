@@ -7,17 +7,22 @@ on:
 
 jobs:
   build_and_push:
-    if: github.ref == 'refs/heads/master' 
+    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set image tag
+      # 이미지 메타(태그/라벨) 생성
+      - name: Docker meta
         id: meta
-        run: |
-          echo "TAGS=latest,${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -33,13 +38,13 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ secrets.IMAGE_NAME }}:latest
-            ${{ secrets.IMAGE_NAME }}:${{ steps.meta.outputs.TAGS##*, }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ secrets.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ secrets.IMAGE_NAME }}:buildcache,mode=max
 
   deploy:
+    if: github.ref == 'refs/heads/master'
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
