@@ -24,6 +24,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Generate Gradle wrapper
+        if: ${{ !hashFiles('cgvclone/gradlew') }}
+        uses: gradle/gradle-build-action@v3
+        with:
+          build-root-directory: cgvclone
+          gradle-version: 8.7
+          arguments: wrapper
+
       - name: Grant execute permission for gradlew
         working-directory: ./cgvclone
         run: chmod +x ./gradlew
