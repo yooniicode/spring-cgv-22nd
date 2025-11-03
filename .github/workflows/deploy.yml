@@ -83,7 +83,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "cgvclone/docker-compose.yml"
-          target: "/opt/cgvclone"
+          target: /home/${{ secrets.SSH_USER }}/cgvclone
 
       - name: SSH deploy with docker compose (GitHub Secrets only)
         uses: appleboy/ssh-action@v1.2.0
@@ -96,7 +96,7 @@ jobs:
             set -euo pipefail
             set -x
               
-            APP_DIR="/opt/cgvclone"
+            APP_DIR="/home/${{ secrets.SSH_USER }}/cgvclone" 
             sudo mkdir -p "$APP_DIR"
             cd "$APP_DIR"
             
