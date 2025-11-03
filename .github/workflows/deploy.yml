@@ -74,7 +74,18 @@ jobs:
     needs: build_and_push
     runs-on: ubuntu-latest
     steps:
-      - name: SSH deploy
+      - uses: actions/checkout@v4
+
+      - name: Upload compose file
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          source: "cgvclone/docker-compose.yml"
+          target: "/opt/cgvclone"
+
+      - name: SSH deploy with docker compose (GitHub Secrets only)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -84,47 +95,41 @@ jobs:
           script: |
             set -euo pipefail
             set -x
-            echo "Starting deploy on EC2..."
-
+              
+            APP_DIR="/opt/cgvclone"
+            sudo mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+            
+            
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-            # MySQL 컨테이너
-            if sudo docker ps -a --format '{{.Names}}' | grep -q '^mysql$'; then
-              if sudo docker ps --format '{{.Names}}' | grep -q '^mysql$'; then
-                echo "MySQL already running. Restarting..."
-                sudo docker restart mysql
-              else
-                echo "MySQL container exists but stopped. Starting..."
-                sudo docker start mysql
-              fi
-            else
-              echo "MySQL container not found. Creating new one..."
-              sudo docker run -d --name mysql \
-                -e MYSQL_ROOT_PASSWORD=rootpw \
-                -e MYSQL_DATABASE=ceosdb \
-                -e MYSQL_USER=ceosuser \
-                -e MYSQL_PASSWORD=ceospw \
-                -p 3306:3306 \
-                mysql:8
-              sleep 15
-            fi
+            set +x
+            umask 177
+            {
+              echo "APP_IMAGE=${{ secrets.IMAGE_NAME }}:latest"
 
-            # 앱 이미지 풀 & 재기동
-            IMAGE="${{ secrets.IMAGE_NAME }}:latest"
-            sudo docker pull "$IMAGE" || true
-            sudo docker stop web || true
-            sudo docker rm web || true
+              # MySQL
+              echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}"
+              echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}"
+              echo "MYSQL_USER=${{ secrets.MYSQL_USER }}"
+              echo "MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}"
 
-            sudo docker run -d --name web \
-              --link mysql:mysql \
-              -p 80:8080 \
-              -e SPRING_PROFILES_ACTIVE=prod \
-              -e DB_URL="jdbc:mysql://mysql:3306/ceosdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8" \
-              -e DB_USERNAME="ceosuser" \
-              -e DB_PASSWORD="ceospw" \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e JWT_EXPIRATION_MS="${{ secrets.JWT_EXPIRATION_MS }}" \
-              -e JWT_REFRESH_EXPIRATION_MS="${{ secrets.JWT_REFRESH_EXPIRATION_MS }}" \
-              "$IMAGE"
+              echo "DB_URL=jdbc:mysql://db:3306/${{ secrets.MYSQL_DATABASE }}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8"
+              echo "DB_USERNAME=${{ secrets.MYSQL_USER }}"
+              echo "DB_PW=${{ secrets.MYSQL_PASSWORD }}"
 
-            echo "Deploy complete!"
+              echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+              echo "JWT_EXPIRATION_MS=${{ secrets.JWT_EXPIRATION_MS }}"
+              echo "JWT_REFRESH_EXPIRATION_MS=${{ secrets.JWT_REFRESH_EXPIRATION_MS }}"
+
+              # echo "PAYMENT_API_SECRET=${{ secrets.PAYMENT_API_SECRET }}"
+              # echo "PAYMENT_STORE_ID=${{ secrets.PAYMENT_STORE_ID }}"
+            } > .env
+            set -x
+
+            sudo docker compose -f docker-compose.yml --env-file .env pull
+            sudo docker compose -f docker-compose.yml --env-file .env up -d
+            sudo docker compose -f docker-compose.yml ps
+            sudo docker compose -f docker-compose.yml logs -n 100 web || true
+
+            command -v shred >/dev/null 2>&1 && sudo shred -u .env || sudo rm -f .env
